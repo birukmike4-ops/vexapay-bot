@@ -1,7 +1,6 @@
 import os
-import asyncio
-from telegram import ReplyKeyboardMarkup, Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram import ReplyKeyboardMarkup
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from flask import Flask
 from threading import Thread
 
@@ -18,7 +17,7 @@ def run_flask():
 # Telegram Bot setup
 TOKEN = os.getenv("TOKEN")
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def start(update, context):
     keyboard = [
         ["📋 Tasks"],
         ["👥 Invite Friends"],
@@ -26,39 +25,42 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ["💰 My Wallet"]
     ]
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-    await update.message.reply_text(
+    update.message.reply_text(
         "👋 Welcome to VexaPay Official!\n\nChoose an option:",
         reply_markup=reply_markup
     )
 
-async def buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def buttons(update, context):
     text = update.message.text
 
     if text == "📋 Tasks":
-        await update.message.reply_text(
+        update.message.reply_text(
             "🏆 **Complete these tasks to earn rewards:**\n\n"
-            "✅ **Telegram:** https://t.me\n"
-            "✅ **YouTube:** https://youtube.com\n"
-            "✅ **TikTok:** https://tiktok.com\n"
-            "✅ **Instagram:** https://instagram.com"
+            "✅ **Telegram:** https://t.me/VexaPayOfficial\n"
+            "✅ **YouTube:** https://www.youtube.com/@VexaPayOfficial\n"
+            "✅ **TikTok:** https://tiktok.com/@vexapayofficial\n"
+            "📸 **Instagram:** https://www.instagram.com/vexapayofficial"
         )
     elif text == "👥 Invite Friends":
-        await update.message.reply_text("👥 Invite friends feature is coming soon.")
+        update.message.reply_text("👥 Invite friends feature is coming soon.")
     elif text == "🏆 Top Winners":
-        await update.message.reply_text("🥇 Top Winners feature is coming soon.")
+        update.message.reply_text("🥇 Top Winners feature is coming soon.")
     elif text == "💰 My Wallet":
-        await update.message.reply_text("💰 Your balance: 0 Points")
+        update.message.reply_text("💰 Your balance: 0 Points")
 
 def main():
-    # Start Flask in a background thread so Render doesn't timeout
+    # Start Flask in a background thread
     Thread(target=run_flask, daemon=True).start()
 
-    # Start Telegram Bot
-    application = Application.builder().token(TOKEN).build()
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, buttons))
+    # Start Telegram Bot (v13.15 style)
+    updater = Updater(TOKEN, use_context=True)
+    dp = updater.dispatcher
+
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, buttons))
     
-    application.run_polling()
+    updater.start_polling()
+    updater.idle()
 
 if __name__ == "__main__":
     main()
